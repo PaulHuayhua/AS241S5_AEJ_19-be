@@ -1,0 +1,12 @@
+server:
+  port: 8080
+
+rapidapi:
+  key: aaaf01b149msh2d129c21f6c960dp1b493ejsn10796d0cc8d1
+  host-scraper: ai-content-scraper.p.rapidapi.com
+  host-weather: weather-intelligence1.p.rapidapi.com
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://paulhuayhuajaquehua_db_user:6EVyX8oJcwkw0KYT@cluster0.ai2p7ks.mongodb.net/19_paul_huayhua?retryWrites=true&w=majority
