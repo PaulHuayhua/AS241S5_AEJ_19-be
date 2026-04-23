@@ -1,0 +1,142 @@
+# COMANDOS KUBERNETES - PAUL HUAYHUA API
+# MINIKUBE FUNCIONA EN CODESPACE | LOCAL
+# KUBECTL FUNCIONA DIRECTO EN KILLERCODA (SIN MINIKUBE)
+
+# ============================================
+# MINIKUBE - GESTIÓN DEL CLÚSTER
+# ============================================
+
+# Consultar versión de minikube
+minikube version
+
+# Consultar si minikube está en start o stop
+minikube status
+
+# Iniciar clúster kubernetes
+minikube start
+
+# Ingresar a la carpeta de los manifiestos de kubernetes
+cd manifest
+
+# ============================================
+# NAMESPACE
+# ============================================
+
+# Listar namespaces
+kubectl get namespace
+kubectl get ns
+
+# Crear namespace mediante archivo
+kubectl apply -f paul-huayhua-19-namespace.yml
+
+# Consultar namespace en uso por "default" | LINUX
+kubectl config view --minify | grep namespace
+
+# Consultar namespace en uso por "default" | WINDOWS
+kubectl config view --minify | findstr namespace
+
+# Cambiar namespace en uso de "default" a "paul-huayhua-19-namespace"
+kubectl config set-context --current --namespace=paul-huayhua-19-namespace
+
+# ============================================
+# APLICAR MANIFIESTOS
+# ============================================
+
+# Aplicar secret
+kubectl apply -f paul-huayhua-19-secret.yml
+
+# Aplicar deployment
+kubectl apply -f paul-huayhua-19-deployment.yml
+
+# Aplicar service
+kubectl apply -f paul-huayhua-19-service.yml
+
+# Aplicar todos los manifiestos
+kubectl apply -f .
+
+# ============================================
+# CONSULTAS
+# ============================================
+
+# Consultar todos los recursos de un namespace
+kubectl get all -n paul-huayhua-19-namespace
+
+# Consultar todos los recursos y secrets de un namespace
+kubectl get all,secrets -n paul-huayhua-19-namespace
+
+# Listar services del namespace
+minikube service paul-huayhua-19-service -n paul-huayhua-19-namespace
+minikube service list
+
+# Ver logs del deployment
+kubectl logs -f deployment/paul-huayhua-19-deployment -n paul-huayhua-19-namespace
+
+# Ver detalles del pod
+kubectl get pods -n paul-huayhua-19-namespace
+kubectl describe pod <pod-name> -n paul-huayhua-19-namespace
+
+# ============================================
+# ACCESO A LA APLICACIÓN
+# ============================================
+
+# Obtener IP de minikube
+minikube ip
+
+# Probar el microservicio dentro del clúster con curl
+curl "http://192.168.49.2:30019/api/chat?message=Hola"
+curl http://192.168.49.2:30019/swagger-ui.html
+
+# Crear un túnel de puerto entre la máquina local (host) y el clúster de Kubernetes
+kubectl port-forward service/paul-huayhua-19-service 8019:8019 -n paul-huayhua-19-namespace
+
+# Después de port-forward, acceder a:
+# http://localhost:8019/api/chat
+# http://localhost:8019/swagger-ui.html
+# http://localhost:8019/actuator/health
+
+# ============================================
+# PRUEBAS CON CURL (después de port-forward)
+# ============================================
+
+# Health check
+curl http://localhost:8019/actuator/health
+
+# Chat GET
+curl "http://localhost:8019/api/chat?message=¿Qué es la inteligencia artificial?"
+
+# Chat POST
+curl -X POST http://localhost:8019/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "¿Qué es la inteligencia artificial?"}'
+
+# Weather
+curl "http://localhost:8019/api/weather?lat=-12.0464&lon=-77.0428"
+
+# ============================================
+# GESTIÓN Y TROUBLESHOOTING
+# ============================================
+
+# Escalar deployment
+kubectl scale deployment paul-huayhua-19-deployment --replicas=3 -n paul-huayhua-19-namespace
+
+# Reiniciar deployment
+kubectl rollout restart deployment/paul-huayhua-19-deployment -n paul-huayhua-19-namespace
+
+# Ver eventos
+kubectl get events -n paul-huayhua-19-namespace --sort-by='.lastTimestamp'
+
+# Ejecutar comando dentro del pod
+kubectl exec -it <pod-name> -n paul-huayhua-19-namespace -- /bin/sh
+
+# ============================================
+# LIMPIEZA
+# ============================================
+
+# Eliminar todos los recursos
+kubectl delete -f .
+
+# Eliminar namespace completo
+kubectl delete namespace paul-huayhua-19-namespace
+
+# Detener minikube
+minikube stop

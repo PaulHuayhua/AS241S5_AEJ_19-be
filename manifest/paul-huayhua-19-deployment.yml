@@ -1,0 +1,32 @@
+# kubectl apply -f paul-huayhua-19-deployment.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paul-huayhua-19-deployment
+  namespace: paul-huayhua-19-namespace
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: paul-huayhua-19-deployment
+  template:
+    metadata:
+      labels:
+        app: paul-huayhua-19-deployment
+    spec:
+      containers:
+      - name: paul-huayhua-19-container
+        image: paulhuayhua/paul-huayhua-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - secretRef:
+            name: paul-huayhua-19-secret
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"

@@ -4,7 +4,7 @@ import reactor.core.publisher.Mono;
 
 public interface ApiService {
 
-    Mono<String> scrape(String url);
+    Mono<String> chat(String message);
 
     Mono<String> getWeather(double lat, double lon);
 }

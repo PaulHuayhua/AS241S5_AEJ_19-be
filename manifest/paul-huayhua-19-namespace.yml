@@ -1,0 +1,6 @@
+# kubectl create namespace paul-huayhua-19-namespace (COMANDO)
+# kubectl apply -f paul-huayhua-19-namespace.yml (yml)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: paul-huayhua-19-namespace

@@ -1,0 +1,46 @@
+server:
+  port: ${PORT:8080}
+  url: ${SERVER_URL:http://localhost:8080}
+
+spring:
+  application:
+    name: paul-huayhua-api
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb+srv://paulhuayhuajaquehua_db_user:6EVyX8oJcwkw0KYT@cluster0.ai2p7ks.mongodb.net/19_paul_huayhua?retryWrites=true&w=majority}
+
+groq:
+  api:
+    key: ${GROQ_API_KEY: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}
+    model: ${GROQ_MODEL:meta-llama/llama-4-scout-17b-16e-instruct}
+
+rapidapi:
+  key: ${RAPIDAPI_KEY:aaaf01b149msh2d129c21f6c960dp1b493ejsn10796d0cc8d1}
+  host-weather: ${RAPIDAPI_HOST_WEATHER:weather-intelligence1.p.rapidapi.com}
+
+logging:
+  level:
+    ap1.paul.huayhua: INFO
+    org.springframework.web.reactive.function.client: DEBUG
+    org.springframework.data.mongodb: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  health:
+    defaults:
+      enabled: true
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
