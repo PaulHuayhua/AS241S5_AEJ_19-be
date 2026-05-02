@@ -11,7 +11,7 @@ spring:
 
 groq:
   api:
-    key: ${GROQ_API_KEY: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}
+    key: ${GROQ_API_KEY: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}
     model: ${GROQ_MODEL:meta-llama/llama-4-scout-17b-16e-instruct}
 
 rapidapi:
