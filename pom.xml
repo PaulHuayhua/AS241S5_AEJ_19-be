@@ -21,7 +21,6 @@
 
     <properties>
         <java.version>17</java.version>
-        <!-- Forzar versiones para corregir CVEs detectados por Trivy -->
         <netty.version>4.1.133.Final</netty.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <jackson-bom.version>2.18.6</jackson-bom.version>
@@ -47,7 +46,7 @@
             <artifactId>spring-boot-starter-data-mongodb-reactive</artifactId>
         </dependency>
 
-        <!-- Actuator (Health checks para Kubernetes) -->
+        <!-- Actuator -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
