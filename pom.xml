@@ -9,7 +9,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.11</version>
+        <version>3.5.14</version>
         <relativePath/>
     </parent>
 
@@ -21,8 +21,10 @@
 
     <properties>
         <java.version>17</java.version>
-        <!-- Forzar versión de Netty para corregir CVEs detectados por Trivy -->
+        <!-- Forzar versiones para corregir CVEs detectados por Trivy -->
         <netty.version>4.1.133.Final</netty.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <jackson-bom.version>2.18.6</jackson-bom.version>
     </properties>
 
     <dependencies>
