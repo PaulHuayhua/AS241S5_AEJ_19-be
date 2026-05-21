@@ -7,16 +7,16 @@ spring:
     name: paul-huayhua-api
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb+srv://paulhuayhuajaquehua_db_user:6EVyX8oJcwkw0KYT@cluster0.ai2p7ks.mongodb.net/19_paul_huayhua?retryWrites=true&w=majority}
+      uri: ${MONGODB_URI}
 
 groq:
   api:
-    key: ${GROQ_API_KEY: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}
-    model: ${GROQ_MODEL:meta-llama/llama-4-scout-17b-16e-instruct}
+    key: ${GROQ_API_KEY}
+    model: ${GROQ_MODEL}
 
 rapidapi:
-  key: ${RAPIDAPI_KEY:aaaf01b149msh2d129c21f6c960dp1b493ejsn10796d0cc8d1}
-  host-weather: ${RAPIDAPI_HOST_WEATHER:weather-intelligence1.p.rapidapi.com}
+  key: ${RAPIDAPI_KEY}
+  host-weather: ${RAPIDAPI_HOST_WEATHER}
 
 logging:
   level:
