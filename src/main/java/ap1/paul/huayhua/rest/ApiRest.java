@@ -35,12 +35,12 @@ public class ApiRest {
     }
 
     @PostMapping("/chat")
-    @Operation(summary = "Groq Chat", description = "Chat con IA usando Groq (Llama 3.3)")
+    @Operation(summary = "Groq Chat", description = "Chat con IA usando Groq (Llama 3.3 / Vision)")
     public Mono<String> chat(
             @Parameter(description = "Mensaje para el chat", required = true)
             @RequestBody ChatRequest request) {
-        log.info("Endpoint /chat - Mensaje: {}", request.getMessage());
-        return service.chat(request.getMessage());
+        log.info("Endpoint /chat - Mensaje: {}, Imagen: {}", request.getMessage(), request.getImageUrl() != null ? "Presente" : "No presente");
+        return service.chat(request);
     }
 
     @GetMapping("/chat")

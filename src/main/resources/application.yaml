@@ -7,16 +7,18 @@ spring:
     name: paul-huayhua-api
   data:
     mongodb:
-      uri: ${MONGODB_URI}
+      uri: ${MONGODB_URI:mongodb://localhost:27017/paul-huayhua}
+  codec:
+    max-in-memory-size: 10MB
 
 groq:
   api:
-    key: ${GROQ_API_KEY}
-    model: ${GROQ_MODEL}
+    key: ${GROQ_API_KEY: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}
+    model: ${GROQ_MODEL:meta-llama/llama-4-scout-17b-16e-instruct}
 
 rapidapi:
-  key: ${RAPIDAPI_KEY}
-  host-weather: ${RAPIDAPI_HOST_WEATHER}
+  key: ${RAPIDAPI_KEY:aaaf01b149msh2d129c21f6c960dp1b493ejsn10796d0cc8d1}
+  host-weather: ${RAPIDAPI_HOST_WEATHER:weatherapi-com.p.rapidapi.com}
 
 logging:
   level:

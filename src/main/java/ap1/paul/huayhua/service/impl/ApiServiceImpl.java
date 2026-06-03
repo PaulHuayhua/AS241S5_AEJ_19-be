@@ -1,6 +1,7 @@
 package ap1.paul.huayhua.service.impl;
 
 import ap1.paul.huayhua.model.ApiResult;
+import ap1.paul.huayhua.model.ChatRequest;
 import ap1.paul.huayhua.repository.ApiResultRepository;
 import ap1.paul.huayhua.service.ApiService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +16,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,8 @@ public class ApiServiceImpl implements ApiService {
 
     @Value("${groq.api.model}")
     private String groqModel;
+
+    private static final String VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
     private final ApiResultRepository repository;
     private final WebClient groqWebClient;
@@ -45,18 +49,37 @@ public class ApiServiceImpl implements ApiService {
 
     @Override
     public Mono<String> chat(String message) {
-        log.info("Groq Chat - Mensaje: {}", message);
+        return chat(new ChatRequest(message, null));
+    }
+
+    @Override
+    public Mono<String> chat(ChatRequest request) {
+        String message = request.getMessage();
+        String imageUrl = request.getImageUrl();
+        log.info("Groq Chat - Mensaje: {}, Imagen: {}", message, imageUrl != null ? "Presente" : "No presente");
         
+        String modelToUse = (imageUrl != null) ? VISION_MODEL : groqModel;
+        
+        List<Map<String, Object>> contentList = new ArrayList<>();
+        contentList.add(Map.of("type", "text", "text", message));
+        
+        if (imageUrl != null) {
+            contentList.add(Map.of(
+                "type", "image_url",
+                "image_url", Map.of("url", imageUrl)
+            ));
+        }
+
         Map<String, Object> requestBody = Map.of(
-            "model", groqModel,
+            "model", modelToUse,
             "messages", List.of(
                 Map.of(
                     "role", "user",
-                    "content", message
+                    "content", contentList
                 )
             ),
             "temperature", 1,
-            "max_tokens", 1024,
+            "max_completion_tokens", 1024,
             "top_p", 1,
             "stream", false
         );
@@ -65,6 +88,12 @@ public class ApiServiceImpl implements ApiService {
                 .uri("/chat/completions")
                 .bodyValue(requestBody)
                 .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), response ->
+                    response.bodyToMono(String.class).flatMap(errorBody -> {
+                        log.error("Groq API error - Status: {}, Body: {}", response.statusCode(), errorBody);
+                        return Mono.error(new RuntimeException("Groq error " + response.statusCode() + ": " + errorBody));
+                    })
+                )
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .flatMap(response -> {
                     log.info("Respuesta de Groq recibida");
@@ -74,11 +103,15 @@ public class ApiServiceImpl implements ApiService {
                     
                     Map<String, Object> chatResponse = new HashMap<>();
                     chatResponse.put("content", content);
-                    chatResponse.put("model", groqModel);
+                    chatResponse.put("model", modelToUse);
                     chatResponse.put("tokens_used", tokensUsed);
                     
                     Map<String, Object> queryMap = new HashMap<>();
                     queryMap.put("message", message);
+                    if (imageUrl != null) {
+                        queryMap.put("has_image", true);
+                        queryMap.put("image_base64", imageUrl); // Guardar imagen completa
+                    }
                     
                     ApiResult result = new ApiResult();
                     result.setType("groq-chat");
@@ -88,10 +121,14 @@ public class ApiServiceImpl implements ApiService {
                     result.setUpdatedAt(LocalDateTime.now());
                     result.setDeleted(false);
                     
-                    return repository.save(result)
+                    // Guardar en MongoDB de forma asíncrona — si falla, igual se retorna la respuesta al usuario
+                    repository.save(result)
                             .doOnSuccess(saved -> log.info("Guardado en MongoDB con ID: {}", saved.getId()))
-                            .doOnError(error -> log.error("Error al guardar en MongoDB: {}", error.getMessage()))
-                            .flatMap(saved -> Mono.fromCallable(() -> objectMapper.writeValueAsString(chatResponse)));
+                            .doOnError(error -> log.error("Error al guardar en MongoDB (no crítico): {}", error.getMessage()))
+                            .onErrorResume(error -> Mono.empty())
+                            .subscribe();
+
+                    return Mono.fromCallable(() -> objectMapper.writeValueAsString(chatResponse));
                 })
                 .onErrorResume(e -> {
                     log.error("Error en Groq Chat: {}", e.getMessage());
@@ -172,10 +209,14 @@ public class ApiServiceImpl implements ApiService {
                     result.setUpdatedAt(LocalDateTime.now());
                     result.setDeleted(false);
                     
-                    return repository.save(result)
+                    // Guardar en MongoDB de forma asíncrona — si falla, igual se retorna la respuesta al usuario
+                    repository.save(result)
                             .doOnSuccess(saved -> log.info("Clima guardado en MongoDB con ID: {}", saved.getId()))
-                            .doOnError(error -> log.error("Error al guardar clima en MongoDB: {}", error.getMessage()))
-                            .flatMap(saved -> Mono.fromCallable(() -> objectMapper.writeValueAsString(rawResponse)));
+                            .doOnError(error -> log.error("Error al guardar clima en MongoDB (no crítico): {}", error.getMessage()))
+                            .onErrorResume(error -> Mono.empty())
+                            .subscribe();
+
+                    return Mono.fromCallable(() -> objectMapper.writeValueAsString(rawResponse));
                 })
                 .onErrorResume(e -> {
                     log.error("Error en Weather: {}", e.getMessage(), e);
