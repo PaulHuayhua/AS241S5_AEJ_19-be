@@ -1,23 +1,21 @@
-name: GitHub Packages Pipeline
+name: GitHub Releases Pipeline
 
 on:
   push:
     branches:
       - develop
       - main
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - develop
       - main
   workflow_dispatch:
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
-  test-and-analyze:
-    name: Test & Code Quality
+  test:
+    name: Run Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -34,22 +32,17 @@ jobs:
       - name: Run Tests
         run: mvn test -B
 
-      - name: Generate Coverage
-        run: mvn jacoco:report
-
-      - name: Upload Coverage
+      - name: Upload Test Results
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: coverage-report
-          path: target/site/jacoco/
+          name: test-results
+          path: target/surefire-reports/
 
-  build-and-publish:
-    name: Build & Publish to GHCR
+  build:
+    name: Build Application
     runs-on: ubuntu-latest
-    needs: test-and-analyze
-    permissions:
-      contents: read
-      packages: write
+    needs: test
 
     steps:
       - name: Checkout
@@ -65,39 +58,71 @@ jobs:
       - name: Build JAR
         run: mvn clean package -DskipTests -B
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          name: application-jar
+          path: target/*.jar
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download JAR
+        uses: actions/download-artifact@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+          name: application-jar
 
-      - name: Build and Push
-        uses: docker/build-push-action@v5
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
         with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          files: '*.jar'
+          body: |
+            ## 🚀 Release ${{ github.ref_name }}
+            
+            ### Changes
+            Ver commits en GitHub
+            
+            ### Download
+            Descarga el JAR desde los assets abajo.
+            
+            ### Run
+            ```bash
+            java -jar paul.huayhua-*.jar
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Summary
+  summary:
+    name: Pipeline Summary
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: always()
+
+    steps:
+      - name: Generate Summary
         run: |
-          echo "### 📦 Package Published" >> $GITHUB_STEP_SUMMARY
+          echo "## � Pipeline Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Registry:** \`ghcr.io\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** \`${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Tags:** \`${{ steps.meta.outputs.tags }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 [View Packages](https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }})" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.test.result }}" == "success" && "${{ needs.build.result }}" == "success" ]]; then
+            echo "### ✅ Build exitoso" >> $GITHUB_STEP_SUMMARY
+            echo "JAR disponible en Artifacts" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Build falló" >> $GITHUB_STEP_SUMMARY
+          fi
 
 
